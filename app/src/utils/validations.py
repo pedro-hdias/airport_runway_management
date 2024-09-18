@@ -31,24 +31,13 @@ def validate_input(model, airline, departure, arrive, flight_number):
     return True
 
 def validate_passengers(passengers):
-
     try:        
-
         if passengers <= 0:
-
             log_validations .debug(f"Número de passageiros: {passengers}")
-
             print("O número de passageiros deve ser positivo.")
-
             return False
-
     except ValueError:
-
         log_validations .error(f"{passengers}, número de passageiros inválido.")
-
         print("Número de passageiros inválido. Deve ser um número inteiro.")
-
         return False
-
     return True
-

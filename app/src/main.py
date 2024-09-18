@@ -22,7 +22,7 @@ def main():
                 log_main.info("Encerrando o programa.")
                 menu_functions[option]()
                 break
-            
+
             if option in menu_functions.keys():
                 menu_functions[option]()
         except Exception as e:
