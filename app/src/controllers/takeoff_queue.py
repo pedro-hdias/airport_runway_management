@@ -68,3 +68,15 @@ class TakeoffQueue:
         log_takeoff_queue .warning(f"Avião com o número de voo {flight_number} não encontrado na fila.")
         return -1
 
+    def remove_aircraft_by_flight_number(self):
+        log_takeoff_queue .info("Decolando um voo específico.")
+        flight_number= input("Digite o número do voo: ").strip()
+        log_takeoff_queue .debug(f"Decolando o avião com o número de voo {flight_number}.")
+        for index, aircraft in enumerate(self.queue):
+            if aircraft.flight_number == flight_number:
+                log_takeoff_queue .debug(f"Decolando o avião com o número de voo {flight_number}.")
+                print(f"Decolando o avião com o número de voo {flight_number}.")
+                return self.queue.pop(index)
+        print(f"Avião com o número de voo {flight_number} não encontrado na fila.")
+        log_takeoff_queue .warning(f"Avião com o número de voo {flight_number} não encontrado na fila.")
+        return None
