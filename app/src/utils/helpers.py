@@ -11,6 +11,7 @@ def get_menu():
         4: "Listar todos os aviões na fila de decolagem",
         5: "Listar as características do próximo a decolar",
         6: "Mostrar a posição de um avião conforme o número do voo",
+        7: "Remover um avião da fila de decolagem pelo número",
         0: "Sair"
     }
     
@@ -21,6 +22,7 @@ def get_menu():
         4: takeoff_queue.get_list_all_aircraft,
         5: takeoff_queue.get_next_aircraft,
         6: takeoff_queue.get_aircraft_position,
+        7: takeoff_queue.remove_aircraft_by_flight_number,
         0: lambda: print("Encerrando o programa. Até mais!")
     }
     return menu_display_options, function_options    
