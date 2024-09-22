@@ -38,7 +38,7 @@ jobs:
           git config user.email "actions@github.com"
           git checkout main  # Garante que estamos criando a release a partir de main
           git checkout -b release-${{ env.NEXT_VERSION }}
-          git push origin release-v${{ env.NEXT_VERSION }}
+          git push origin release-${{ env.NEXT_VERSION }}
 
       - name: Create Pull Request from Develop to Release
         uses: peter-evans/create-pull-request@v3
