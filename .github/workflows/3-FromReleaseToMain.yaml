@@ -1,0 +1,27 @@
+name: Create PR from Release to Main
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - release-*
+
+jobs:
+  create-pr:
+    if: github.event.pull_request.merged == true  # Certifique-se de que o PR foi mergeado
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Create Pull Request from Release to Main
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}  # Usa a branch release-*
+          base: main  # Base é main, pois vamos de release para main
+          title: "Release ${{ github.head_ref }} to Main"
+          body: |
+            This is an automated PR to merge the changes from the release branch ${{ github.head_ref }} into main.
+          draft: false
