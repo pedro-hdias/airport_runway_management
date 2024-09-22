@@ -1,0 +1,52 @@
+name: Automated Release Creation
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+
+jobs:
+  create-release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "Latest tag: $latest_tag"
+          echo "::set-output name=LATEST_TAG::$latest_tag"
+
+      - name: Calculate Next Version
+        id: next_version
+        run: |
+          IFS='.' read -r major minor patch <<< "${{ steps.get_tag.outputs.LATEST_TAG }}"
+          next_patch=$((patch + 1))
+          next_version="$major.$minor.$next_patch"
+          echo "Next version: $next_version"
+          echo "::set-output name=NEXT_VERSION::$next_version"
+
+      - name: Create Release Branch from Main
+        run: |
+          # Checkout main and create a new release branch
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git checkout main
+          git checkout -b release-v${{ steps.next_version.outputs.NEXT_VERSION }}
+          git push origin release-v${{ steps.next_version.outputs.NEXT_VERSION }}
+
+      - name: Create Pull Request from Develop to Release
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: develop
+          base: release-v${{ steps.next_version.outputs.NEXT_VERSION }}
+          title: "Merge Develop into Release ${{ steps.next_version.outputs.NEXT_VERSION }}"
+          body: |
+            This is an automated PR to merge the changes from develop into the new release branch (release-${{ steps.next_version.outputs.NEXT_VERSION }}).
+          draft: false
