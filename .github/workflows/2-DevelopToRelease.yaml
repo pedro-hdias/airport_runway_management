@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Certifica-se de que todas as tags sejam baixadas
+          fetch-depth: 0  # Garante que todas as tags e o histórico completo sejam baixados
 
       - name: Get Latest Tag
         id: get_tag
@@ -33,11 +33,11 @@ jobs:
 
       - name: Create Release Branch from Main
         run: |
-          # Checkout main and create a new release branch
+          # Checkout main branch and create a new release branch from main
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git checkout main
-          git checkout -b release-v${{ env.NEXT_VERSION }}
+          git checkout main  # Garante que estamos criando a release a partir de main
+          git checkout -b release-${{ env.NEXT_VERSION }}
           git push origin release-v${{ env.NEXT_VERSION }}
 
       - name: Create Pull Request from Develop to Release
@@ -45,8 +45,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: develop
-          base: release-v${{ env.NEXT_VERSION }}
+          base: release-${{ env.NEXT_VERSION }}  # O merge será feito de develop para release
           title: "Merge Develop into Release ${{ env.NEXT_VERSION }}"
           body: |
-            This is an automated PR to merge the changes from develop into the new release branch (release-v${{ env.NEXT_VERSION }}).
+            This is an automated PR to merge the changes from develop into the new release branch (release-${{ env.NEXT_VERSION }}).
           draft: false
