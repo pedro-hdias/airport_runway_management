@@ -14,14 +14,24 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Certifique-se de pegar todo o histórico e as tags
+
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          # Obtém a última tag (a versão mais recente)
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+
+      - name: Switch to Release Branch
+        run: |
+          # Usa a última tag para identificar a branch de release
+          git checkout release-${{ env.LATEST_TAG }}
 
       - name: Create Pull Request from Release to Main
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref }}  # Usa a branch release-*
-          base: main  # Base é main, pois vamos de release para main
-          title: "Release ${{ github.head_ref }} to Main"
-          body: |
-            This is an automated PR to merge the changes from the release branch ${{ github.head_ref }} into main.
-          draft: false
+        run: |
+          # Usar a GitHub CLI para criar o PR da branch release para a main
+          gh pr create --title "Release ${{ env.LATEST_TAG }} to Main" --base main --head release-${{ env.LATEST_TAG }} --body "Automated PR to merge the release branch ${{ env.LATEST_TAG }} into main."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
