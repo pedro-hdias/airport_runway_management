@@ -20,18 +20,22 @@ jobs:
       - name: Get Latest Tag
         id: get_tag
         run: |
-          # Obtém a última tag (a versão mais recente)
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          # Obtém a última tag semanticamente
+          latest_tag=$(git tag --sort=-v:refname | head -n 1)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+
+      - name: Debug Latest Tag
+        run: |
+          echo "Usando a tag mais recente (semântica): ${{ env.LATEST_TAG }}"
 
       - name: Switch to Release Branch
         run: |
           # Usa a última tag para identificar a branch de release
-          git checkout release-${{ env.LATEST_TAG }}
+          git checkout release-${{ github.head_ref }}
 
       - name: Create Pull Request from Release to Main
         run: |
-          # Usar a GitHub CLI para criar o PR da branch release para a main
-          gh pr create --title "Release ${{ env.LATEST_TAG }} to Main" --base main --head release-${{ env.LATEST_TAG }} --body "Automated PR to merge the release branch ${{ env.LATEST_TAG }} into main."
+          # Usar a GitHub CLI para criar o PR da branch release para main
+          gh pr create --title "Release ${{ env.LATEST_TAG }} to Main" --base main --head release-${{ github.head_ref }} --body "Automated PR to merge the release branch ${{ env.LATEST_TAG }} into main."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
