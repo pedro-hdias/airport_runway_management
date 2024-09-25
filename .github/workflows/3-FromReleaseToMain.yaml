@@ -33,6 +33,11 @@ jobs:
           # Faz o checkout da branch de release existente
           git checkout release-${{ env.LATEST_TAG }}
 
+      - name: Pull Latest Changes from Release Branch
+        run: |
+          # Garante que a branch de release está atualizada com o repositório remoto
+          git pull origin release-${{ env.LATEST_TAG }}
+
       - name: Create Pull Request from Release to Main
         run: |
           # Usar a GitHub CLI para criar o PR da branch release para main
