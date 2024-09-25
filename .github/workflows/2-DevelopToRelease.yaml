@@ -23,6 +23,10 @@ jobs:
           latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
+      - name: Debug Latest Tag
+        run: |
+          echo "LATEST_TAG: ${{ env.LATEST_TAG }}"  # Verifica se o valor está correto
+
       - name: Calculate Next Version
         id: next_version
         run: |
@@ -30,6 +34,10 @@ jobs:
           next_patch=$((patch + 1))
           next_version="$major.$minor.$next_patch"
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
+
+      - name: Debug Next Version
+        run: |
+          echo "NEXT_VERSION: ${{ env.NEXT_VERSION }}"  # Verifica se o valor está correto
 
       - name: Create Release Branch from Main
         run: |
