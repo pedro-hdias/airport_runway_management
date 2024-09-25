@@ -20,8 +20,8 @@ jobs:
       - name: Get Latest Tag
         id: get_tag
         run: |
-          # Obtém a última tag cronologicamente
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          # Obtém a última tag pela data de criação
+          latest_tag=$(git tag --sort=-creatordate | head -n 1)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
       - name: Debug Latest Tag
