@@ -23,10 +23,6 @@ jobs:
           latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
-      - name: Debug Latest Tag
-        run: |
-          echo "LATEST_TAG: ${{ env.LATEST_TAG }}"  # Verifica se o valor está correto
-
       - name: Calculate Next Version
         id: next_version
         run: |
@@ -34,10 +30,6 @@ jobs:
           next_patch=$((patch + 1))
           next_version="$major.$minor.$next_patch"
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
-
-      - name: Debug Next Version
-        run: |
-          echo "NEXT_VERSION: ${{ env.NEXT_VERSION }}"  # Verifica se o valor está correto
 
       - name: Create Release Branch from Main
         run: |
@@ -52,8 +44,8 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: develop
-          base: release-${{ env.NEXT_VERSION }}  # O merge será feito de develop para release
+          branch: develop  # Mantém develop separado
+          base: release-${{ env.NEXT_VERSION }}  # O PR será criado da develop para release
           title: "Merge Develop into Release ${{ env.NEXT_VERSION }}"
           body: |
             This is an automated PR to merge the changes from develop into the new release branch (release-${{ env.NEXT_VERSION }}).
