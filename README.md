@@ -56,15 +56,20 @@ python main.py
 - `views/`: Interface de interação com o usuário (CLI).
 - `requirements.txt`: Lista de dependências Python do projeto.
 
-## Contribuindo
+## Como Contribuir
 
-Contribuições são sempre bem-vindas! Se você quiser contribuir com o projeto, siga os passos:
+1. Faça o *fork* do projeto.
 
-1. Fork o repositório.
-2. Crie uma branch para sua feature (`git checkout -b feature/nome-da-feature`).
-3. Commit suas mudanças (`git commit -m 'Add alguma feature'`).
-4. Faça o push para a branch (`git push origin feature/nome-da-feature`).
-5. Abra um Pull Request para a branch `develop`.
+2. **Crie uma branch de feature**: Ao iniciar uma nova feature ou correção de bug, crie uma branch com o prefixo `feature-*`, onde `*` representa o nome da sua feature.
+
+Exemplo:
+
+```bash
+git checkout -b feature-minha-nova-feature
+
+3. Siga todo o workflow do repositório até sua main;
+
+4. Realize a solicitação pull da sua branch main para a branch develop do repositório.
 
 ## Controle de Versão
 
@@ -74,6 +79,26 @@ Este projeto segue o padrão **Git Flow** para controle de versões. O fluxo pad
 - `develop`: Branch principal de integração.
 - `release*`: Preparação de novas versões.
 - `main`: Código de produção.
+
+## Workflows Automatizados
+
+Este repositório utiliza uma série de workflows do GitHub Actions para automatizar os processos de integração e versionamento.
+
+### 1. Feature para Develop
+
+Quando um pull request de uma branch `feature-*` para a branch `develop` é mergeado, um PR é automaticamente criado da `feature` para `develop`. Isso garante que as alterações sejam revisadas e integradas de forma controlada.
+
+### 2. Develop para Release
+
+Após o merge de um pull request na branch `develop`, é criada automaticamente uma branch `release-vX.X.X` com base na tag mais recente. Um pull request é aberto da `develop` para a branch de release, permitindo que as alterações sejam preparadas para a próxima versão.
+
+### 3. Release para Main
+
+Quando um pull request na branch de release (`release-*`) é mergeado, um novo pull request é criado automaticamente da branch `release` para `main`, preparando a versão final para produção.
+
+### 4. Criação de Tag após Merge na Main
+
+Após o merge de um pull request da branch `release` para `main`, uma nova tag é criada automaticamente, incrementando a versão com base na tag anterior. Isso garante que cada release em `main` tenha uma versão única e rastreável.
 
 ## Licença
 
