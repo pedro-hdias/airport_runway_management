@@ -17,6 +17,11 @@ jobs:
         with:
           fetch-depth: 0  # Certifique-se de pegar todo o histórico e as tags
 
+      - name: Set Git User Info
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Get Latest Tag
         id: get_tag
         run: |
