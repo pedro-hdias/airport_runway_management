@@ -38,6 +38,7 @@ jobs:
           git checkout -b release-${{ env.LATEST_TAG }}
           
           # Sobe a nova branch para o repositório
+          git pull origin release-${{ env.LATEST_TAG }}
           git push --set-upstream origin release-${{ env.LATEST_TAG }}
 
       - name: Create Pull Request from Develop to Release
