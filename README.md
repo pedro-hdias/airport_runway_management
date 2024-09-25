@@ -84,3 +84,4 @@ Este projeto está licenciado sob a [                    GNU GENERAL PUBLIC LICE
 ## Contato
 
 Desenvolvido por [pedro-hdias](https://github.com/pedro-hdias). Para dúvidas ou sugestões, entre em contato pelo GitHub!
+;
