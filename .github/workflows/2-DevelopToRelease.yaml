@@ -15,21 +15,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Garante que todas as tags e histórico completo sejam baixados
+          fetch-depth: 0  # Garante que todas as tags e o histórico completo sejam baixados
 
       - name: Get Latest Tag
         id: get_tag
         run: |
+          # Obtém a última tag cronologicamente
           latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
-      - name: Calculate Next Version
-        id: next_version
+      - name: Debug Latest Tag
         run: |
-          IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
-          next_patch=$((patch + 1))
-          next_version="$major.$minor.$next_patch"
-          echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
+          echo "Usando a tag mais recente: ${{ env.LATEST_TAG }}"
 
       - name: Create Release Branch from Main
         run: |
@@ -37,15 +34,15 @@ jobs:
           git switch main
           git pull origin main  # Puxa as últimas mudanças de main
           
-          # Cria uma nova branch de release
-          git checkout -b release-${{ env.NEXT_VERSION }}
+          # Cria uma nova branch de release usando a tag mais recente
+          git checkout -b release-${{ env.LATEST_TAG }}
           
           # Sobe a nova branch para o repositório
-          git push --set-upstream origin release-${{ env.NEXT_VERSION }}
+          git push --set-upstream origin release-${{ env.LATEST_TAG }}
 
       - name: Create Pull Request from Develop to Release
         run: |
           # Usar a GitHub CLI para criar o PR de develop para a nova release
-          gh pr create --title "Release ${{ env.NEXT_VERSION }}" --base release-${{ env.NEXT_VERSION }} --head develop --body "Automated PR to merge develop into release-${{ env.NEXT_VERSION }}"
+          gh pr create --title "Merge Develop into Release ${{ env.LATEST_TAG }}" --base release-${{ env.LATEST_TAG }} --head develop --body "Automated PR to merge develop into release-${{ env.LATEST_TAG }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
