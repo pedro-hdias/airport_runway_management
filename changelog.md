@@ -32,3 +32,13 @@ Este arquivo precisa ter todas as alterações que você fez. Por favor, mantenh
 
 - Correção no Workflow de Criação de PRs: Ajuste no fluxo de criação de PRs para garantir que a branch de release seja atualizada corretamente antes da criação de PRs para main.
 - Correção na Criação de Tags: Correção para garantir que novas tags sejam criadas corretamente após o merge para main.
+
+## v0.0.3 - 2024-09-26
+
+### Melhorias
+
+* Atualização do README: Adição de informações sobre a automação de workflows e instruções para contribuição.
+
+### Correções
+
+* Correção de comandos no Readme: Ajuste de comandos para instalação e execução do projeto.
