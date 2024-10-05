@@ -1,12 +1,12 @@
-name: Major Handling and PR Creation
+name: Minor Handling and PR Creation
 
 on:
   push:
     branches:
-      - feature/*
+      - update/*
 
 jobs:
-  create-feature-pr:
+  create-update-pr:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,11 +22,11 @@ jobs:
 
       - name: Extract clean branch name
         run: |
-          echo "clean_branch_name=$(echo ${{ github.ref_name }} | sed 's/^feature\///')" >> $GITHUB_ENV
+          echo "clean_branch_name=$(echo ${{ github.ref_name }} | sed 's/^update\///')" >> $GITHUB_ENV
 
       - name: Ensure patch label exists
         run: |
-          gh label create "major" --color "#D73A49" --description "Indicates a patch change" || echo "Label already exists"
+          gh label create "minor" --color "#FFA500" --description "Indicates a patch change" || echo "Label already exists"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -49,8 +49,8 @@ jobs:
           gh pr create \
             --head ${{ github.ref_name }} \
             --base develop \
-            --title "Major: ${{ env.clean_branch_name }}" \
-            --body "This is a major PR created from the branch ${{ github.ref_name }}." \
-            --label "major"
+            --title "Minor: ${{ env.clean_branch_name }}" \
+            --body "This is a minor PR created from the branch ${{ github.ref_name }}." \
+            --label "minor"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
