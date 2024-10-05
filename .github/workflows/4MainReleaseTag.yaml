@@ -32,8 +32,8 @@ jobs:
       - name: Calculate Next Version
         id: next_version
         run: |
-          # Remove o prefixo 'v' da tag anterior, se houver, e faz o cálculo da próxima versão
-          clean_tag=${{ env.LATEST_TAG#v }}
+          # Remove o prefixo 'v' da tag anterior, se houver, e calcula a próxima versão
+          clean_tag=$(echo $LATEST_TAG | sed 's/^v//')
           IFS='.' read -r major minor patch <<< "$clean_tag"
           next_patch=$((patch + 1))
           next_version="v$major.$minor.$next_patch"
