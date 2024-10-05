@@ -10,28 +10,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout branch that triggered the workflow
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.ref_name }}  # Checkout the branch that triggered the workflow
+          ref: ${{ github.ref_name }}  # Ensure the correct branch (fix/*) is checked out
 
-      - name: Extract branch name
+      - name: Set up git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract clean branch name
         run: |
           echo "clean_branch_name=$(echo ${{ github.ref_name }} | sed 's/^fix\///')" >> $GITHUB_ENV
 
-      - name: Create Pull Request
-        id: create_pr
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref_name }}  # Ensure the branch is set correctly
-          base: develop  # Target branch for the PR
-          title: "patch: ${{ env.clean_branch_name }}"
-          body: "This is a patch PR created from the branch ${{ github.ref_name }}."
-          draft: false
-
-      - name: Apply Patch Label
+      - name: Fetch develop branch
         run: |
-          gh pr edit ${{ steps.create_pr.outputs.pull_request_number }} --add-label "patch"
+          git fetch origin develop:develop  # Fetch develop branch
+
+      - name: Create new branch for PR (no merge)
+        run: |
+          git checkout -b pr-fix-${{ env.clean_branch_name }}  # Create a new branch for the PR
+          git push origin pr-fix-${{ env.clean_branch_name }}  # Push the branch to origin
+
+      - name: Create Pull Request
+        run: |
+          gh pr create \
+            --head pr-fix-${{ env.clean_branch_name }} \
+            --base develop \
+            --title "patch: ${{ env.clean_branch_name }}" \
+            --body "This is a patch PR created from the branch ${{ github.ref_name }}." \
+            --label "patch"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
