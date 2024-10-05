@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref_name }}  # Checkout the branch that triggered the workflow
 
       - name: Extract branch name
         run: |
@@ -22,8 +24,8 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref_name }}
-          base: develop
+          branch: ${{ github.ref_name }}  # Ensure the branch is set correctly
+          base: develop  # Target branch for the PR
           title: "patch: ${{ env.clean_branch_name }}"
           body: "This is a patch PR created from the branch ${{ github.ref_name }}."
           draft: false
