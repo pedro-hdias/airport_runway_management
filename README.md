@@ -69,47 +69,89 @@ python app\src\main.py
 
 ## Como Contribuir
 
-1. **Replique o projeto**: Faça o *fork* do projeto.
-2. **Crie uma branch de feature**: Ao iniciar uma nova feature ou correção de bug, crie uma branch com o prefixo `feature-*`, onde `*` representa o nome da sua feature.
+### Estrutura de Branches
 
-Exemplo:
+O fluxo de desenvolvimento deste projeto segue uma estrutura de branches bem definida, baseada em `Git Flow`, para garantir a organização e a estabilidade do código. Cada branch tem um propósito claro, e as versões são gerenciadas automaticamente por workflows do GitHub Actions.
 
-`git checkout -b feature-minha-nova-feature`
+#### 1. Branches de Desenvolvimento
 
-Onde    `minha-nova-feature` é o nome da sua nova feature.
+Estas branches representam o trabalho em andamento e são criadas pelos desenvolvedores para novas funcionalidades, melhorias e correções de bugs. Elas são integradas na branch `develop` através de Pull Requests (PRs).
 
-3. **Seguir o workflow**: Siga todo o workflow do repositório até sua main;
+* **`fix/*`**: Branches criadas para correções de bugs e pequenos ajustes.
+  * **Exemplo**: `fix/corrige-bug-auth`, `fix/ajuste-layout`
+  * **Objetivo**: Quando mergeadas em `develop`, incrementam o `patch` na próxima release.
 
-4. **Submeter modificações**: Realize a solicitação pull da sua branch main para a branch develop do repositório.
+* **`update/*`**: Branches usadas para melhorias e pequenas adições de funcionalidades.
+  * *Exemplo**: `update/melhoria-performance`, `update/refatoracao-codigo`
+  * **Objetivo**: Quando mergeadas em `develop`, incrementam o `minor` na próxima release.
 
-## Controle de Versão
+* **`feature/*`**: Branches usadas para grandes mudanças ou novas funcionalidades, que podem quebrar a compatibilidade com versões anteriores.
+  * **Exemplo**: `feature/nova-funcionalidade-api`, `feature/integra-sistema-externo`
+  * **Objetivo**: Quando mergeadas em `develop`, incrementam o `major` na próxima release.
 
-Este projeto segue o padrão **Git Flow** para controle de versões. O fluxo padrão é:
+#### 2. Branch Principal (Main)
 
-* `feature*`: Branches onde novas funcionalidades são desenvolvidas.
-* `develop`: Branch principal de integração.
-* `release*`: Preparação de novas versões.
-* `main`: Código de produção.
+A branch `main` representa a versão de produção do projeto. As versões estáveis e prontas para uso são sempre mergeadas para esta branch a partir das branches de `release`.
 
-## Workflows Automatizados
+* **`main`**: Contém o código em produção, estável e versionado.
+  * **Objetivo**: Receber o merge das branches de `release/*` com uma nova tag de versão.
 
-Este repositório utiliza uma série de workflows do GitHub Actions para automatizar os processos de integração e versionamento.
+#### 3. Branch de Integração (Develop)
 
-### 1. Feature para Develop
+A branch `develop` serve como uma versão de pré-release. Todas as mudanças das branches de desenvolvimento (`fix/*`, `update/*`, `feature/*`) são integradas aqui antes de serem preparadas para produção.
 
-Quando um pull request de uma branch `feature-*` para a branch `develop` é mergeado, um PR é automaticamente criado da `feature` para `develop`. Isso garante que as alterações sejam revisadas e integradas de forma controlada.
+* **`develop`**: Recebe os PRs de todas as branches de desenvolvimento.
+  * **Objetivo**: Acumular as mudanças que estão prontas para serem lançadas em uma nova versão.
 
-### 2. Develop para Release
+#### 4. Branches de Release (Release)
 
-Após o merge de um pull request na branch `develop`, é criada automaticamente uma branch `release-vX.X.X` com base na tag mais recente. Um pull request é aberto da `develop` para a branch de release, permitindo que as alterações sejam preparadas para a próxima versão.
+As branches `release/*` são criadas a partir da `develop` quando uma nova versão está pronta para ser lançada. Elas permitem ajustes finais, como testes e documentação, antes da versão ser integrada à `main`.
 
-### 3. Release para Main
+* **`release/vX.X.X`**: Branches criadas a partir de `develop` para preparar uma nova versão.
+  * **Objetivo**: Realizar os ajustes finais e preparar a versão para produção.
+  * **Exemplo**: `release/v0.1.0`, `release/v1.0.0`
 
-Quando um pull request na branch de release (`release-*`) é mergeado, um novo pull request é criado automaticamente da branch `release` para `main`, preparando a versão final para produção.
+### Fluxo de Trabalho
 
-### 4. Criação de Tag após Merge na Main
+O fluxo de trabalho é automatizado por **GitHub Actions**, com Pull Requests sendo criados automaticamente para garantir revisão e controle de qualidade antes de qualquer merge.
 
-Após o merge de um pull request da branch `release` para `main`, uma nova tag é criada automaticamente, incrementando a versão com base na tag anterior. Isso garante que cada release em `main` tenha uma versão única e rastreável.
+#### 1. Criação da Branch de Desenvolvimento
+
+* O desenvolvedor cria uma branch seguindo um dos padrões:
+  * `fix/*`: Para correções de bugs.
+  * `update/*`: Para melhorias ou pequenas funcionalidades.
+  * `feature/*`: Para grandes mudanças ou novas funcionalidades.
+
+#### 2. Push na Branch de Desenvolvimento
+
+* Ao fazer push para uma branch `fix/*`, `update/*`, ou `feature/*`, um workflow é acionado e cria automaticamente um Pull Request (PR) para a branch `develop`.
+
+#### 3. Merge para `develop`
+
+* O time revisa o PR, e, após aprovação, o merge é feito manualmente para a branch `develop`.
+
+#### 4. Criação de Branch de Release
+
+* O time revisa o PR, e, após aprovação, o merge é feito manualmente para a branch `release`.
+
+#### 5. Merge para `main` e Criação de Tag
+
+* Após a revisão e aprovação do PR da `release`, o merge é feito para a branch `main`.
+* Uma nova tag de versão é criada automaticamente com base na branch `release`.
+
+### Notas sobre Versionamento
+
+O versionamento segue o [Versionamento Semântico (SemVer)](https://semver.org/):
+
+* **`MAJOR`**: Aumentado quando há mudanças incompatíveis com versões anteriores (ex.: `feature/*` branches).
+* **`MINOR`**: Aumentado quando há novas funcionalidades ou melhorias compatíveis com versões anteriores (ex.: `update/*` branches).
+* **`PATCH`**: Aumentado quando há correções de bugs ou pequenos ajustes (ex.: `fix/*` branches).
+
+### Overrides Manuais
+
+Embora o workflow aplique automaticamente labels aos PRs com base no nome da branch, os desenvolvedores podem **sobrescrever** esse comportamento manualmente, aplicando um label ao PR (`patch`, `minor`, `major`) antes do merge, caso o impacto da mudança seja diferente do esperado.
+
+O override manual é fortemente desencorajado, e deve ser usado apenas em casos excepcionais, já que o fluxo automatizado é parte fundamental do processo de versionamento e o override pode causar inconsistências. Faça isso apenas se tiver certeza do impacto da mudança e com a devida justificativa.
 
 ## Licença
 
