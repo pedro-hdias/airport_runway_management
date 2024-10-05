@@ -1,0 +1,31 @@
+name: Patch Handling and PR Creation
+
+on:
+  push:
+    branches:
+      - fix/*
+
+jobs:
+  create-patch-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Create Pull Request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref_name }}
+          base: develop
+          title: "patch: ${{ github.ref_name | replace('fix/', '') }}"
+          body: "This is a patch PR created from the branch ${{ github.ref_name }}."
+          draft: false
+
+      - name: Apply Patch Label
+        run: |
+          gh pr edit ${{ steps.create_pr.outputs.pull_request_number }} --add-label "patch"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
