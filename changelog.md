@@ -42,3 +42,10 @@ Este arquivo precisa ter todas as alterações que você fez. Por favor, mantenh
 ### Correções
 
 * Correção de comandos no Readme: Ajuste de comandos para instalação e execução do projeto.
+
+## v0.0.5 - 2024-10-05
+
+### correções
+
+- Correção nas tags das versões;
+

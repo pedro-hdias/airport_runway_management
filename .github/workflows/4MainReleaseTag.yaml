@@ -40,5 +40,5 @@ jobs:
       - name: Create New Tag After Merge
         run: |
           # Cria uma nova tag incrementada
-          git tag -a ${{ env.NEXT_VERSION }}" -m "New release v${{ env.NEXT_VERSION }} after merge into main
+          git tag -a ${{ env.NEXT_VERSION }}" -m "New release ${{ env.NEXT_VERSION }} after merge into main
           git push origin ${{ env.NEXT_VERSION }}
