@@ -24,6 +24,12 @@ jobs:
         run: |
           echo "clean_branch_name=$(echo ${{ github.ref_name }} | sed 's/^fix\///')" >> $GITHUB_ENV
 
+      - name: Ensure patch label exists
+        run: |
+          gh label create "patch" --color "#FF5733" --description "Indicates a patch change" || echo "Label already exists"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Pull Request directly
         run: |
           gh pr create \
