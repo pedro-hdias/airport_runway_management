@@ -40,6 +40,7 @@ jobs:
           else
             echo "Existing PR found: #$existing_pr"
             echo "create_pr=false" >> $GITHUB_ENV
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Adiciona o GH_TOKEN para a CLI gh
 
