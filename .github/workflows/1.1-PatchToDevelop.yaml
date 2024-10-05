@@ -1,0 +1,42 @@
+name: Patch Handling and PR Creation
+
+on:
+  push:
+    branches:
+      - fix/*
+
+jobs:
+  create-patch-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch that triggered the workflow
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref_name }}  # Checkout the fix/* branch that triggered the workflow
+
+      - name: Set up git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract clean branch name
+        run: |
+          echo "clean_branch_name=$(echo ${{ github.ref_name }} | sed 's/^fix\///')" >> $GITHUB_ENV
+
+      - name: Ensure patch label exists
+        run: |
+          gh label create "patch" --color "#FF5733" --description "Indicates a patch change" || echo "Label already exists"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request directly
+        run: |
+          gh pr create \
+            --head ${{ github.ref_name }} \
+            --base develop \
+            --title "patch: ${{ env.clean_branch_name }}" \
+            --body "This is a patch PR created from the branch ${{ github.ref_name }}." \
+            --label "patch"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
