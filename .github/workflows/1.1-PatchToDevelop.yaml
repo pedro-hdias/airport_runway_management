@@ -13,7 +13,7 @@ jobs:
       - name: Checkout branch that triggered the workflow
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.ref_name }}  # Ensure the correct branch (fix/*) is checked out
+          ref: ${{ github.ref_name }}  # Checkout the fix/* branch that triggered the workflow
 
       - name: Set up git user
         run: |
@@ -24,19 +24,10 @@ jobs:
         run: |
           echo "clean_branch_name=$(echo ${{ github.ref_name }} | sed 's/^fix\///')" >> $GITHUB_ENV
 
-      - name: Fetch develop branch
-        run: |
-          git fetch origin develop:develop  # Fetch develop branch
-
-      - name: Create new branch for PR (no merge)
-        run: |
-          git checkout -b pr-fix-${{ env.clean_branch_name }}  # Create a new branch for the PR
-          git push origin pr-fix-${{ env.clean_branch_name }}  # Push the branch to origin
-
-      - name: Create Pull Request
+      - name: Create Pull Request directly
         run: |
           gh pr create \
-            --head pr-fix-${{ env.clean_branch_name }} \
+            --head ${{ github.ref_name }} \
             --base develop \
             --title "patch: ${{ env.clean_branch_name }}" \
             --body "This is a patch PR created from the branch ${{ github.ref_name }}." \
