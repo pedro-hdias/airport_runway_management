@@ -4,18 +4,18 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - main  # Aciona o workflow quando um PR é fechado e mergeado na branch main
+      - main
 
 jobs:
   create-tag:
-    if: github.event.pull_request.merged == true  # Garante que só roda se o PR foi realmente mergeado
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Certifique-se de pegar todo o histórico e as tags
+          fetch-depth: 0  # Garante que todas as tags sejam baixadas
 
       - name: Set Git User Info
         run: |
@@ -25,20 +25,22 @@ jobs:
       - name: Get Latest Tag
         id: get_tag
         run: |
-          # Obtém a última tag semanticamente
-          latest_tag=$(git tag --sort=-v:refname | head -n 1)
+          # Obtém a última tag pela data de criação
+          latest_tag=$(git tag --sort=-creatordate | head -n 1)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
       - name: Calculate Next Version
         id: next_version
         run: |
-          IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
+          # Remove o prefixo 'v' da tag anterior, se houver, e faz o cálculo da próxima versão
+          clean_tag=${{ env.LATEST_TAG#v }}
+          IFS='.' read -r major minor patch <<< "$clean_tag"
           next_patch=$((patch + 1))
-          next_version="$major.$minor.$next_patch"
+          next_version="v$major.$minor.$next_patch"
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
 
       - name: Create New Tag After Merge
         run: |
           # Cria uma nova tag incrementada
-          git tag -a "v${{ env.NEXT_VERSION }}" -m "New release v${{ env.NEXT_VERSION }} after merge into main"
-          git push origin "v${{ env.NEXT_VERSION }}"  # Empurra a nova tag para o repositório
+          git tag -a "${{ env.NEXT_VERSION }}" -m "New release ${{ env.NEXT_VERSION }} after merge into main"
+          git push origin "${{ env.NEXT_VERSION }}"
