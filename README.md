@@ -164,3 +164,4 @@ Para ver uma versão em português, acesse [o site oficial da licença](https://
 ## Contato
 
 Desenvolvido por [pedro-hdias](https://github.com/pedro-hdias). Para dúvidas ou sugestões, entre em contato pelo GitHub!
+-
