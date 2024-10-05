@@ -28,7 +28,7 @@ jobs:
         run: |
           gh label create "patch" --color "#28A745" --description "Indicates a patch change" || echo "Label already exists"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Adiciona o GH_TOKEN para a CLI gh
 
       - name: Check for existing PRs
         id: check_pr
@@ -40,6 +40,8 @@ jobs:
           else
             echo "Existing PR found: #$existing_pr"
             echo "create_pr=false" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Adiciona o GH_TOKEN para a CLI gh
 
       - name: Create Pull Request directly
         if: env.create_pr == 'true'  # Condição que verifica se deve criar o PR
@@ -51,4 +53,4 @@ jobs:
             --body "This is a patch PR created from the branch ${{ github.ref_name }}." \
             --label "patch"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Adiciona o GH_TOKEN para a CLI gh

@@ -1,4 +1,4 @@
-name: Minor Handling and PR Creation
+name: Major Handling and PR Creation
 
 on:
   push:
@@ -40,7 +40,8 @@ jobs:
           else
             echo "Existing PR found: #$existing_pr"
             echo "create_pr=false" >> $GITHUB_ENV
-
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Adicionar essa linha
       - name: Create Pull Request directly
         if: env.create_pr == 'true'  # Condição que verifica se deve criar o PR
         run: |
