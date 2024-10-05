@@ -26,7 +26,7 @@ jobs:
 
       - name: Ensure patch label exists
         run: |
-          gh label create "patch" --color "#FF5733" --description "Indicates a patch change" || echo "Label already exists"
+          gh label create "patch" --color "#28A745" --description "Indicates a patch change" || echo "Label already exists"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

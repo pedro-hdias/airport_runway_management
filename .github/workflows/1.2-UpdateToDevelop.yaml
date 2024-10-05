@@ -1,0 +1,42 @@
+name: Minor Handling and PR Creation
+
+on:
+  push:
+    branches:
+      - update/*
+
+jobs:
+  create-update-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch that triggered the workflow
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract clean branch name
+        run: |
+          echo "clean_branch_name=$(echo ${{ github.ref_name }} | sed 's/^update\///')" >> $GITHUB_ENV
+
+      - name: Ensure patch label exists
+        run: |
+          gh label create "minor" --color "#FFA500" --description "Indicates a patch change" || echo "Label already exists"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request directly
+        run: |
+          gh pr create \
+            --head ${{ github.ref_name }} \
+            --base develop \
+            --title "Minor: ${{ env.clean_branch_name }}" \
+            --body "This is a minor PR created from the branch ${{ github.ref_name }}." \
+            --label "minor"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
