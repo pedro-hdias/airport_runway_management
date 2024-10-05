@@ -1,0 +1,46 @@
+name: Create PR from Release to Main
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - release-*
+
+jobs:
+  create-pr:
+    if: github.event.pull_request.merged == true  # Certifique-se de que o PR foi mergeado
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Certifique-se de pegar todo o histórico e as tags
+
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          # Obtém a última tag semanticamente
+          latest_tag=$(git tag --sort=-creatordate | head -n 1)
+          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+
+      - name: Debug Latest Tag
+        run: |
+          echo "Usando a tag mais recente (semântica): ${{ env.LATEST_TAG }}"
+
+      - name: Switch to Existing Release Branch
+        run: |
+          # Faz o checkout da branch de release existente
+          git checkout release-${{ env.LATEST_TAG }}
+
+      - name: Pull Latest Changes from Release Branch
+        run: |
+          # Garante que a branch de release está atualizada com o repositório remoto
+          git pull origin release-${{ env.LATEST_TAG }}
+
+      - name: Create Pull Request from Release to Main
+        run: |
+          # Usar a GitHub CLI para criar o PR da branch release para main
+          gh pr create --title "Release ${{ env.LATEST_TAG }} to Main" --base main --head release-${{ env.LATEST_TAG }} --body "Automated PR to merge the release branch ${{ env.LATEST_TAG }} into main."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

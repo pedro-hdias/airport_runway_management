@@ -20,33 +20,29 @@ jobs:
       - name: Get Latest Tag
         id: get_tag
         run: |
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          # Obtém a última tag pela data de criação
+          latest_tag=$(git tag --sort=-creatordate | head -n 1)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
-      - name: Calculate Next Version
-        id: next_version
+      - name: Debug Latest Tag
         run: |
-          IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
-          next_patch=$((patch + 1))
-          next_version="$major.$minor.$next_patch"
-          echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
+          echo "Usando a tag mais recente: ${{ env.LATEST_TAG }}"
 
       - name: Create Release Branch from Main
         run: |
-          # Checkout main branch and create a new release branch from main
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git checkout main  # Garante que estamos criando a release a partir de main
-          git checkout -b release-${{ env.NEXT_VERSION }}
-          git push origin release-${{ env.NEXT_VERSION }}
+          # Certifique-se de que estamos na branch main
+          git switch main
+          git pull origin main  # Puxa as últimas mudanças de main
+          
+          # Cria uma nova branch de release usando a tag mais recente
+          git checkout -b release-${{ env.LATEST_TAG }}
+          
+          # Sobe a nova branch para o repositório
+          git push --set-upstream origin release-${{ env.LATEST_TAG }}
 
       - name: Create Pull Request from Develop to Release
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: develop
-          base: release-${{ env.NEXT_VERSION }}  # O merge será feito de develop para release
-          title: "Merge Develop into Release ${{ env.NEXT_VERSION }}"
-          body: |
-            This is an automated PR to merge the changes from develop into the new release branch (release-${{ env.NEXT_VERSION }}).
-          draft: false
+        run: |
+          # Usar a GitHub CLI para criar o PR de develop para a nova release
+          gh pr create --title "Merge Develop into Release ${{ env.LATEST_TAG }}" --base release-${{ env.LATEST_TAG }} --head develop --body "Automated PR to merge develop into release-${{ env.LATEST_TAG }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
