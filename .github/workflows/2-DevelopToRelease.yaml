@@ -47,6 +47,7 @@ jobs:
           else
             echo "PR already exists: #$pr_exists"
             echo "create_pr=false" >> $GITHUB_ENV
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
