@@ -1,46 +1,47 @@
-name: Create PR from Release to Main
+name: Release to Main PR Creation
 
 on:
   pull_request:
     types: [closed]
     branches:
-      - release-*
+      - release-*  # Dispara o workflow quando um PR da branch release é fechado
 
 jobs:
-  create-pr:
-    if: github.event.pull_request.merged == true  # Certifique-se de que o PR foi mergeado
+  create_release_pr:
+    if: github.event.pull_request.merged == true  # Somente continua se o PR foi mergeado
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # Checkout the release branch
+      - name: Checkout release branch
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Certifique-se de pegar todo o histórico e as tags
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
-      - name: Get Latest Tag
-        id: get_tag
+      # Check for an existing PR from release to main
+      - name: Check for existing PR from release to main
+        id: check_pr
         run: |
-          # Obtém a última tag semanticamente
-          latest_tag=$(git tag --sort=-creatordate | head -n 1)
-          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+          pr_exists=$(gh pr list --base main --head ${{ github.event.pull_request.head.ref }} --state open --json number --jq '.[0].number')
+          if [[ -z "$pr_exists" ]]; then
+            echo "No PR found. Creating a new one."
+            echo "create_pr=true" >> $GITHUB_ENV
+          else
+            echo "PR already exists: #$pr_exists"
+            echo "create_pr=false" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug Latest Tag
+      # Create PR if no existing PR is found
+      - name: Create Pull Request from release to main
+        if: env.create_pr == 'true'
         run: |
-          echo "Usando a tag mais recente (semântica): ${{ env.LATEST_TAG }}"
-
-      - name: Switch to Existing Release Branch
-        run: |
-          # Faz o checkout da branch de release existente
-          git checkout release-${{ env.LATEST_TAG }}
-
-      - name: Pull Latest Changes from Release Branch
-        run: |
-          # Garante que a branch de release está atualizada com o repositório remoto
-          git pull origin release-${{ env.LATEST_TAG }}
-
-      - name: Create Pull Request from Release to Main
-        run: |
-          # Usar a GitHub CLI para criar o PR da branch release para main
-          gh pr create --title "Release ${{ env.LATEST_TAG }} to Main" --base main --head release-${{ env.LATEST_TAG }} --body "Automated PR to merge the release branch ${{ env.LATEST_TAG }} into main."
+          gh pr create \
+            --head ${{ github.event.pull_request.head.ref }} \
+            --base main \
+            --title "Merge Release Branch ${{ github.event.pull_request.head.ref }} into Main" \
+            --body "This PR merges the release branch ${{ github.event.pull_request.head.ref }} into the main branch." \
+            --label "release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
