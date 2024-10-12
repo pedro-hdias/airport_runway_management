@@ -21,7 +21,8 @@ jobs:
         id: get_tag
         run: |
           latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+          clean_tag=${latest_tag#v}  # Remove o prefixo 'v' da tag
+          echo "LATEST_TAG=$clean_tag" >> $GITHUB_ENV
 
       # Get the label from the merged PR
       - name: Get PR Label
@@ -36,7 +37,7 @@ jobs:
       - name: Calculate Next Version
         id: calculate_version
         run: |
-          IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG#v }}"
+          IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
           if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
             next_patch=$((patch + 1))
             next_version="$major.$minor.$next_patch"
