@@ -8,11 +8,11 @@ on:
 
 jobs:
   create_release:
-    if: github.event.pull_request.merged == true  # Somente continua se o PR foi mergeado
+    if: github.event.pull_request.merged == true  # Apenas continua se o PR foi mergeado
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the develop branch, with all tags
+      # Checkout the develop branch
       - name: Checkout develop branch
         uses: actions/checkout@v2
         with:
@@ -36,8 +36,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Check for an existing PR from develop to release
+      - name: Check for existing PR from develop to release
+        id: check_pr
+        run: |
+          pr_exists=$(gh pr list --base release-v${{ env.LATEST_TAG }} --head develop --state open --json number --jq '.[0].number')
+          if [[ -z "$pr_exists" ]]; then
+            echo "No PR found. Creating a new one."
+            echo "create_pr=true" >> $GITHUB_ENV
+          else
+            echo "PR already exists: #$pr_exists"
+            echo "create_pr=false" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only continue if no PR exists
+      - name: Proceed if no PR exists
+        if: env.create_pr == 'true'
+        run: echo "Proceeding with release creation"
+
       # Calculate the next version based on the label
       - name: Calculate Next Version
+        if: env.create_pr == 'true'
         id: calculate_version
         run: |
           IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
@@ -53,44 +73,18 @@ jobs:
           fi
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
 
-      # Check if the release already exists
-      - name: Check if release already exists
-        id: check_release
+      # Create a new release branch and tag if no PR exists
+      - name: Create Release and Tag
+        if: env.create_pr == 'true'
         run: |
-          release_exists=$(gh release list --json tagName --jq '.[] | select(.tagName=="v'${{ env.NEXT_VERSION }}'")')
-          if [[ -z "$release_exists" ]]; then
-            echo "create_release=true" >> $GITHUB_ENV
-          else
-            echo "Release already exists, skipping creation." 
-            echo "create_release=false" >> $GITHUB_ENV
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Create or update the release if it doesn't already exist
-      - name: Create or Update Release
-        if: env.create_release == 'true'  # Só cria a release se não existir
-        run: |
+          git checkout main
+          git checkout -b release-v${{ env.NEXT_VERSION }}
+          git push origin release-v${{ env.NEXT_VERSION }}
           gh release create "v${{ env.NEXT_VERSION }}" --title "Release v${{ env.NEXT_VERSION }}" --notes "Automatic release based on merged PR"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Check for an existing PR from develop to release
-      - name: Check for existing PR from develop to release
-        id: check_pr
-        run: |
-          pr_exists=$(gh pr list --base release-v${{ env.NEXT_VERSION }} --head develop --state open --json number --jq '.[0].number')
-          if [[ -z "$pr_exists" ]]; then
-            echo "No PR found. Creating a new one."
-            echo "create_pr=true" >> $GITHUB_ENV
-          else
-            echo "PR already exists: #$pr_exists"
-            echo "create_pr=false" >> $GITHUB_ENV
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Create PR if no existing PR is found
+      # Create Pull Request from develop to release
       - name: Create Pull Request from develop to release
         if: env.create_pr == 'true'
         run: |
