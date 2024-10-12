@@ -63,6 +63,7 @@ jobs:
           else
             echo "Release already exists, skipping creation." 
             echo "create_release=false" >> $GITHUB_ENV
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -85,6 +86,7 @@ jobs:
           else
             echo "PR already exists: #$pr_exists"
             echo "create_pr=false" >> $GITHUB_ENV
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
