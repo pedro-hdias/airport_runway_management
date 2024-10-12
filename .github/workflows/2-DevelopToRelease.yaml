@@ -1,48 +1,57 @@
-name: Automated Release Creation
+name: Release Creation Workflow
 
 on:
   pull_request:
-    types: [closed]
-    branches:
-      - develop
+    types: [closed]  # Aciona o workflow quando um PR é fechado
 
 jobs:
-  create-release:
-    if: github.event.pull_request.merged == true
+  create_release:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop'  # Apenas continua se o PR foi mergeado para develop
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # Checkout the develop branch
+      - name: Checkout develop branch
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Garante que todas as tags e o histórico completo sejam baixados
+          ref: develop
 
+      # Get the latest tag
       - name: Get Latest Tag
         id: get_tag
         run: |
-          # Obtém a última tag pela data de criação
-          latest_tag=$(git tag --sort=-creatordate | head -n 1)
+          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
-      - name: Debug Latest Tag
+      # Get the label from the merged PR
+      - name: Get PR Label
+        id: get_label
         run: |
-          echo "Usando a tag mais recente: ${{ env.LATEST_TAG }}"
+          label=$(gh pr view ${{ github.event.pull_request.number }} --json labels --jq '.labels[].name')
+          echo "PR_LABEL=$label" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Release Branch from Main
+      # Calculate the next version based on the label
+      - name: Calculate Next Version
+        id: calculate_version
         run: |
-          # Certifique-se de que estamos na branch main
-          git switch main
-          git pull origin main  # Puxa as últimas mudanças de main
-          
-          # Cria uma nova branch de release usando a tag mais recente
-          git checkout -b release-${{ env.LATEST_TAG }}
-          
-          # Sobe a nova branch para o repositório
-          git push --set-upstream origin release-${{ env.LATEST_TAG }}
+          IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG#v }}"
+          if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
+            next_patch=$((patch + 1))
+            next_version="$major.$minor.$next_patch"
+          elif [[ "${{ env.PR_LABEL }}" == "minor" ]]; then
+            next_minor=$((minor + 1))
+            next_version="$major.$next_minor.0"
+          elif [[ "${{ env.PR_LABEL }}" == "major" ]]; then
+            next_major=$((major + 1))
+            next_version="$next_major.0.0"
+          fi
+          echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
 
-      - name: Create Pull Request from Develop to Release
+      # Create or update the release
+      - name: Create or Update Release
         run: |
-          # Usar a GitHub CLI para criar o PR de develop para a nova release
-          gh pr create --title "Merge Develop into Release ${{ env.LATEST_TAG }}" --base release-${{ env.LATEST_TAG }} --head develop --body "Automated PR to merge develop into release-${{ env.LATEST_TAG }}"
+          gh release create "v${{ env.NEXT_VERSION }}" --title "Release v${{ env.NEXT_VERSION }}" --notes "Automatic release based on merged PR"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
