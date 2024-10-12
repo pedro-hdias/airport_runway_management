@@ -36,47 +36,62 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Check for an existing PR from develop to release
-      - name: Check for existing PR from develop to release
-        id: check_pr
-        run: |
-          pr_exists=$(gh pr list --base release-v${{ env.LATEST_TAG }} --head develop --state open --json number --jq '.[0].number')
-          if [[ -z "$pr_exists" ]]; then
-            echo "No PR found. Creating a new one."
-            echo "create_pr=true" >> $GITHUB_ENV
-          else
-            echo "PR already exists: #$pr_exists"
-            echo "create_pr=false" >> $GITHUB_ENV
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Only continue if no PR exists
-      - name: Proceed if no PR exists
-        if: env.create_pr == 'true'
-        run: echo "Proceeding with release creation"
-
-      # Calculate the next version based on the label
+      # Calculate the next version based on the label and check if tag exists
       - name: Calculate Next Version
-        if: env.create_pr == 'true'
         id: calculate_version
         run: |
           IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
+          
           if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
             next_patch=$((patch + 1))
-            next_version="$major.$minor.$next_patch"
           elif [[ "${{ env.PR_LABEL }}" == "minor" ]]; then
             next_minor=$((minor + 1))
-            next_version="$major.$next_minor.0"
+            next_patch=0  # Reset o patch ao incrementar o minor
           elif [[ "${{ env.PR_LABEL }}" == "major" ]]; then
             next_major=$((major + 1))
-            next_version="$next_major.0.0"
+            next_minor=0  # Reset o minor
+            next_patch=0  # Reset o patch ao incrementar o major
           fi
+          
+          next_version="$next_major.$next_minor.$next_patch"
+
+          # Se a tag já existir, incrementa de novo
+          while git rev-parse "v$next_version" >/dev/null 2>&1; do
+            echo "Tag v$next_version already exists, incrementing again..."
+            
+            # Incrementa com base no tipo de release
+            if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
+              next_patch=$((next_patch + 1))
+            elif [[ "${{ env.PR_LABEL }}" == "minor" ]]; then
+              next_minor=$((next_minor + 1))
+              next_patch=0
+            elif [[ "${{ env.PR_LABEL }}" == "major" ]]; then
+              next_major=$((next_major + 1))
+              next_minor=0
+              next_patch=0
+            fi
+            
+            next_version="$next_major.$next_minor.$next_patch"
+          done
+          
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
 
-      # Create a new release branch and tag if no PR exists
-      - name: Create Release and Tag
-        if: env.create_pr == 'true'
+      # Check if the release branch exists
+      - name: Check if release branch exists
+        id: check_branch
+        run: |
+          branch_exists=$(git ls-remote --heads origin release-v${{ env.NEXT_VERSION }})
+          if [[ -z "$branch_exists" ]]; then
+            echo "Branch release-v${{ env.NEXT_VERSION }} does not exist, creating."
+            echo "create_release_branch=true" >> $GITHUB_ENV
+          else
+            echo "Branch release-v${{ env.NEXT_VERSION }} already exists."
+            echo "create_release_branch=false" >> $GITHUB_ENV
+          fi
+
+      # Create a new release branch and tag if it doesn't exist
+      - name: Create Release Branch and Tag
+        if: env.create_release_branch == 'true'
         run: |
           git checkout main
           git checkout -b release-v${{ env.NEXT_VERSION }}
@@ -87,7 +102,6 @@ jobs:
 
       # Create Pull Request from develop to release
       - name: Create Pull Request from develop to release
-        if: env.create_pr == 'true'
         run: |
           gh pr create \
             --head develop \
