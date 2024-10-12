@@ -10,17 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the develop branch
+      # Checkout the develop branch, with all tags
       - name: Checkout develop branch
         uses: actions/checkout@v2
         with:
           ref: develop
+          fetch-depth: 0  # Garante que todas as tags sejam baixadas
 
       # Get the latest tag
       - name: Get Latest Tag
         id: get_tag
         run: |
-          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "v0.0.0")
           clean_tag=${latest_tag#v}  # Remove o prefixo 'v' da tag
           echo "LATEST_TAG=$clean_tag" >> $GITHUB_ENV
 
