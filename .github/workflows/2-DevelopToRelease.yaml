@@ -43,16 +43,19 @@ jobs:
           IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
           
           if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
+            next_major=$major  
+            next_minor=$minor  
             next_patch=$((patch + 1))
           elif [[ "${{ env.PR_LABEL }}" == "minor" ]]; then
+            next_major=$major  
             next_minor=$((minor + 1))
-            next_patch=0  # Reset o patch ao incrementar o minor
+            next_patch=0  
           elif [[ "${{ env.PR_LABEL }}" == "major" ]]; then
             next_major=$((major + 1))
-            next_minor=0  # Reset o minor
-            next_patch=0  # Reset o patch ao incrementar o major
+            next_minor=0  
+            next_patch=0  
           fi
-          
+
           next_version="$next_major.$next_minor.$next_patch"
 
           # Se a tag já existir, incrementa de novo
@@ -61,16 +64,19 @@ jobs:
             
             # Incrementa com base no tipo de release
             if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
-              next_patch=$((next_patch + 1))
+              next_major=$major  
+              next_minor=$minor  
+              next_patch=$((patch + 1))
             elif [[ "${{ env.PR_LABEL }}" == "minor" ]]; then
-              next_minor=$((next_minor + 1))
-              next_patch=0
+              next_major=$major  
+              next_minor=$((minor + 1))
+              next_patch=0  
             elif [[ "${{ env.PR_LABEL }}" == "major" ]]; then
-              next_major=$((next_major + 1))
-              next_minor=0
-              next_patch=0
+              next_major=$((major + 1))
+              next_minor=0  
+              next_patch=0  
             fi
-            
+
             next_version="$next_major.$next_minor.$next_patch"
           done
           
