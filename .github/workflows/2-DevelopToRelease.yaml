@@ -2,11 +2,13 @@ name: Release Creation Workflow
 
 on:
   pull_request:
-    types: [closed]  # Aciona o workflow quando um PR é fechado
+    types: [closed]
+    branches:
+      - develop  # Aciona o workflow quando um PR para develop é fechado
 
 jobs:
   create_release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop'  # Apenas continua se o PR foi mergeado para develop
+    if: github.event.pull_request.merged == true  # Somente continua se o PR foi mergeado
     runs-on: ubuntu-latest
 
     steps:
@@ -51,8 +53,23 @@ jobs:
           fi
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
 
-      # Create or update the release
+      # Check if the release already exists
+      - name: Check if release already exists
+        id: check_release
+        run: |
+          release_exists=$(gh release list --json tagName --jq '.[] | select(.tagName=="v'${{ env.NEXT_VERSION }}'")')
+          if [[ -z "$release_exists" ]]; then
+            echo "create_release=true" >> $GITHUB_ENV
+          else
+            echo "Release already exists, skipping creation." 
+            echo "create_release=false" >> $GITHUB_ENV
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Create or update the release if it doesn't already exist
       - name: Create or Update Release
+        if: env.create_release == 'true'  # Só cria a release se não existir
         run: |
           gh release create "v${{ env.NEXT_VERSION }}" --title "Release v${{ env.NEXT_VERSION }}" --notes "Automatic release based on merged PR"
         env:
