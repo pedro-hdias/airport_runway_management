@@ -2,47 +2,54 @@ name: Release to Main PR Creation
 
 on:
   pull_request:
-    types: [closed]
+    types: [closed]  # Aciona o workflow quando um PR é fechado
     branches:
-      - release-*  # Dispara o workflow quando um PR da branch release é fechado
+      - release-*  # Especifica que o PR fechado deve ser de uma branch release-*
 
 jobs:
   create_release_pr:
-    if: github.event.pull_request.merged == true  # Somente continua se o PR foi mergeado
+    if: github.event.pull_request.merged == true  # Apenas continua se o PR foi mergeado
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the release branch
-      - name: Checkout release branch
+      # Checkout the main branch
+      - name: Checkout main branch
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
+          ref: main
+          fetch-depth: 0  # Garante que todas as tags sejam baixadas
 
-      # Check for an existing PR from release to main
-      - name: Check for existing PR from release to main
+      # Get the latest tag
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "v0.0.0")
+          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+
+      # Check if there is an existing PR from release-[tag] to main
+      - name: Check for Existing PR
         id: check_pr
         run: |
-          pr_exists=$(gh pr list --base main --head ${{ github.event.pull_request.head.ref }} --state open --json number --jq '.[0].number')
-          if [[ -z "$pr_exists" ]]; then
-            echo "No PR found. Creating a new one."
+          pr_exists=$(gh pr list --base main --head release-${{ env.LATEST_TAG }} --state open --json number --jq '.[0].number')
+          if [ -z "$pr_exists" ]; then
+            echo "No existing PR found for release-${{ env.LATEST_TAG }}."
             echo "create_pr=true" >> $GITHUB_ENV
           else
-            echo "PR already exists: #$pr_exists"
+            echo "Existing PR found: #$pr_exists"
             echo "create_pr=false" >> $GITHUB_ENV
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Create PR if no existing PR is found
-      - name: Create Pull Request from release to main
+      # Create Pull Request from release-[tag] to main if no PR exists
+      - name: Create Pull Request
         if: env.create_pr == 'true'
         run: |
           gh pr create \
-            --head ${{ github.event.pull_request.head.ref }} \
+            --head release-${{ env.LATEST_TAG }} \
             --base main \
-            --title "Merge Release Branch ${{ github.event.pull_request.head.ref }} into Main" \
-            --body "This PR merges the release branch ${{ github.event.pull_request.head.ref }} into the main branch." \
+            --title "Merge Release ${{ env.LATEST_TAG }} into Main" \
+            --body "This PR merges the release branch (release-${{ env.LATEST_TAG }}) into main." \
             --label "release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
