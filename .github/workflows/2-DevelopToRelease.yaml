@@ -2,9 +2,9 @@ name: Release Creation Workflow
 
 on:
   pull_request:
-    types: [closed]
+    types: [closed]  # Aciona o workflow quando um PR é fechado
     branches:
-      - develop  # Aciona o workflow quando um PR para develop é fechado
+      - develop  # Apenas quando o PR é fechado na develop
 
 jobs:
   create_release:
@@ -19,15 +19,27 @@ jobs:
           ref: develop
           fetch-depth: 0  # Garante que todas as tags sejam baixadas
 
-      # Get the latest tag
+      # Check if there is an existing PR from develop to release-[tag]
+      - name: Check for Existing PR
+        id: check_pr
+        run: |
+          pr_exists=$(gh pr list --head develop --base release-v* --state open --json number --jq '.[0].number')
+          if [ -n "$pr_exists" ]; then
+            echo "There is an open PR from develop to release. Exiting."
+            exit 0
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Get the latest tag and clean the 'v' prefix
       - name: Get Latest Tag
         id: get_tag
         run: |
           latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "v0.0.0")
-          clean_tag=${latest_tag#v}  # Remove o prefixo 'v' da tag
+          clean_tag=${latest_tag#v}  # Remove o prefixo 'v'
           echo "LATEST_TAG=$clean_tag" >> $GITHUB_ENV
 
-      # Get the label from the merged PR
+      # Identify the type of PR (patch, minor, major)
       - name: Get PR Label
         id: get_label
         run: |
@@ -36,77 +48,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Calculate the next version based on the label and check if tag exists
+      # Calculate the next version based on the label
       - name: Calculate Next Version
         id: calculate_version
         run: |
           IFS='.' read -r major minor patch <<< "${{ env.LATEST_TAG }}"
-          
           if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
-            next_major=$major  
-            next_minor=$minor  
             next_patch=$((patch + 1))
+            next_version="$major.$minor.$next_patch"
           elif [[ "${{ env.PR_LABEL }}" == "minor" ]]; then
-            next_major=$major  
             next_minor=$((minor + 1))
-            next_patch=0  
+            next_version="$major.$next_minor.0"
           elif [[ "${{ env.PR_LABEL }}" == "major" ]]; then
             next_major=$((major + 1))
-            next_minor=0  
-            next_patch=0  
+            next_version="$next_major.0.0"
           fi
-
-          next_version="$next_major.$next_minor.$next_patch"
-
-          # Se a tag já existir, incrementa de novo
-          while git rev-parse "v$next_version" >/dev/null 2>&1; do
-            echo "Tag v$next_version already exists, incrementing again..."
-            
-            # Incrementa com base no tipo de release
-            if [[ "${{ env.PR_LABEL }}" == "patch" ]]; then
-              next_major=$major  
-              next_minor=$minor  
-              next_patch=$((patch + 1))
-            elif [[ "${{ env.PR_LABEL }}" == "minor" ]]; then
-              next_major=$major  
-              next_minor=$((minor + 1))
-              next_patch=0  
-            elif [[ "${{ env.PR_LABEL }}" == "major" ]]; then
-              next_major=$((major + 1))
-              next_minor=0  
-              next_patch=0  
-            fi
-
-            next_version="$next_major.$next_minor.$next_patch"
-          done
-          
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
 
-      # Check if the release branch exists
-      - name: Check if release branch exists
-        id: check_branch
-        run: |
-          branch_exists=$(git ls-remote --heads origin release-v${{ env.NEXT_VERSION }})
-          if [[ -z "$branch_exists" ]]; then
-            echo "Branch release-v${{ env.NEXT_VERSION }} does not exist, creating."
-            echo "create_release_branch=true" >> $GITHUB_ENV
-          else
-            echo "Branch release-v${{ env.NEXT_VERSION }} already exists."
-            echo "create_release_branch=false" >> $GITHUB_ENV
-          fi
-
-      # Create a new release branch and tag if it doesn't exist
-      - name: Create Release Branch and Tag
-        if: env.create_release_branch == 'true'
+      # Checkout main and create a new release branch
+      - name: Checkout main branch and create release branch
         run: |
           git checkout main
           git checkout -b release-v${{ env.NEXT_VERSION }}
           git push origin release-v${{ env.NEXT_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Create the new release
+      - name: Create Release
+        run: |
           gh release create "v${{ env.NEXT_VERSION }}" --title "Release v${{ env.NEXT_VERSION }}" --notes "Automatic release based on merged PR"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Create Pull Request from develop to release
+      # Create a PR from develop to release-[tag]
       - name: Create Pull Request from develop to release
         run: |
           gh pr create \
