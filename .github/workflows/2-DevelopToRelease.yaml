@@ -31,14 +31,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Get the latest tag and clean the 'v' prefix
-      - name: Get Latest Tag
-        id: get_tag
-        run: |
-          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "v0.0.0")
-          clean_tag=${latest_tag#v}  # Remove o prefixo 'v'
-          echo "LATEST_TAG=$clean_tag" >> $GITHUB_ENV
-
       # Identify the type of PR (patch, minor, major)
       - name: Get PR Label
         id: get_label
@@ -47,6 +39,14 @@ jobs:
           echo "PR_LABEL=$label" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Get the latest tag and clean the 'v' prefix
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "v0.0.0")
+          clean_tag=${latest_tag#v}  # Remove o prefixo 'v'
+          echo "LATEST_TAG=$clean_tag" >> $GITHUB_ENV
 
       # Calculate the next version based on the label
       - name: Calculate Next Version
